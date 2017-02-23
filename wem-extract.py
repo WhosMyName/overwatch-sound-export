@@ -1,58 +1,68 @@
-import os, subprocess, shutil, hashlib, csv, pprint, sys, json
+"""Overwatch wem extractor v0.3"""
+import os
+import subprocess
+import shutil
+import hashlib
+import csv
+import sys
+import json
 
-print "Overwatch wem extractor v0.2"
-# get config
-with open('config.json') as data_file:
-	config = json.load(data_file)
-counter = 1
-unknown = 0
-# get hash storage
-hashStorage = dict([])
-with open(config["paths"]["important"], 'r') as csvfile:
-	hashreader = csv.reader(csvfile, delimiter=',')
-	for row in hashreader:
-		hashStorage[row[0]] = row[1]
-with open(config["paths"]["noise"], 'r') as csvfile:
-	hashreader = csv.reader(csvfile, delimiter=',')
-	for row in hashreader:
-		hashStorage[row[0]] = row[1]
+print("Overwatch wem extractor v0.2")
+# get CONFIG
+with open("CONFIG.json") as DATA_FILE:
+    CONFIG = json.load(DATA_FILE)
+COUNTER = 1
+UNKNOWN = 0
+
+# get HASH storage
+HASHSTORAGE = dict([])
+with open(CONFIG["paths"]["important"], "r") as CSVFILE:
+    HASHREADER = csv.reader(CSVFILE, delimiter=",")
+    for ROW in HASHREADER:
+        HASHSTORAGE[ROW[0]] = ROW[1]
+with open(CONFIG["paths"]["noise"], "r") as CSVFILE:
+    HASHREADER = csv.reader(CSVFILE, delimiter=",")
+    for ROW in HASHREADER:
+        HASHSTORAGE[ROW[0]] = ROW[1]
+
 # clear unknowns file
-open(config["paths"]["unknowns"], 'a').truncate()
+open(CONFIG["paths"]["unknowns"], "a").truncate()
 
-folder = config["paths"]["casc"]
-# run through the casc folder
-for dir in os.listdir(folder):
-	for file in os.listdir(folder+'/'+dir):
-		# grab all the files
-		if file.endswith(".xxx"):
-			path = folder+'/'+dir+'/'+file
-			with open(path, 'r') as f:
-				# if first line contains wave headers
-				first_line = f.readline()
-				if "WAVEfmt" in first_line[:20]:
-					# show some progress
-					if counter % 100 == 0:
-						print counter
-					counter = counter + 1
-					# convert to ogg
-					FNULL = open(os.devnull, 'w')
-					subprocess.call(config["paths"]["tools"]+'ww2ogg.exe '+path+' --pcb '+config["paths"]["tools"]+'packed_codebooks_aoTuV_603.bin', stdout=FNULL, stderr=subprocess.STDOUT)
-					# if convert was successful
-					if os.path.isfile(path.replace(".xxx", ".ogg")):
-						temp_path = config["paths"]["exported"]+str(counter)+".ogg"
-						shutil.move(path.replace(".xxx", ".ogg"), temp_path)
-						# fix ogg
-						subprocess.call(config["paths"]["tools"]+'revorb.exe '+temp_path, stdout=FNULL, stderr=subprocess.STDOUT)
-						# check against hash storage
-						hash = hashlib.md5(temp_path).hexdigest()
-						if hash in hashStorage:
-							# move to a nice folder
-							shutil.move(temp_path, config["paths"]["exported"]+hashStorage[hash])
-						else:
-							# add hash to the unknowns list
-							unknown = unknown + 1
-							if(not config["full_extract"] and unknown == 1000):
-								sys.exit("1k unknowns listed. Please proceed to categorize. Ty! <3")
-							log = open(config["paths"]["unknowns"], 'a')
-							log.write(hash + ',' + temp_path.replace(config["paths"]["exported"], "") + "\n")
-							log.close()
+FOLDER = CONFIG["paths"]["casc"]
+
+# run through the casc FOLDER
+for DIR in os.listdir(FOLDER):
+    for FILE in os.listdir(FOLDER + "/" + DIR):
+        # grab all the files
+        if FILE.endswith(".xxx"):
+            PATH = FOLDER + "/" + DIR + "/" + FILE
+            with open(PATH, "r") as FILE_DESCRIPTOR:
+                # if first line contains wave headers
+                FIRST_LINE = FILE_DESCRIPTOR.readline()
+                if "WAVEfmt" in FIRST_LINE[:20]:
+                    # show some progress
+                    if COUNTER % 100 == 0:
+                        print(COUNTER)
+                    COUNTER = COUNTER + 1
+                    # convert to ogg
+                    FNULL = open(os.devnull, "w")
+                    subprocess.call([CONFIG["paths"]["tools"], "ww2ogg.exe", PATH, "--pcb", CONFIG["paths"]["tools"], "packed_codebooks_aoTuV_603.bin"], stdout=FNULL, stderr=subprocess.STDOUT)
+                    # if convert was successful
+                    if os.path.isfile(PATH.replace(".xxx", ".ogg")):
+                        TEMP_PATH = CONFIG["paths"]["exported"]+str(COUNTER)+".ogg"
+                        shutil.move(PATH.replace(".xxx", ".ogg"), TEMP_PATH)
+                        # fix ogg
+                        subprocess.call([CONFIG["paths"]["tools"], "revorb.exe ", TEMP_PATH], stdout=FNULL, stderr=subprocess.STDOUT)
+                        # check against HASH storage
+                        HASH = hashlib.md5(TEMP_PATH).hexdigest()
+                        if HASH in HASHSTORAGE:
+                            # move to a nice FOLDER
+                            shutil.move(TEMP_PATH, CONFIG["paths"]["exported"]+HASHSTORAGE[HASH])
+                        else:
+                            # add HASH to the unknowns list
+                            UNKNOWN = UNKNOWN + 1
+                            if not CONFIG["full_extract"] and UNKNOWN == 1000:
+                                sys.exit("1k unknowns listed. Please proceed to categorize. Ty! <3")
+                            LOG = open(CONFIG["paths"]["unknowns"], "a")
+                            LOG.write(HASH + "," + TEMP_PATH.replace(CONFIG["paths"]["exported"], "") + "\n")
+LOG.close()
